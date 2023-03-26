@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.mrSergey.MyREST.dto.SensorDTO;
 import ru.mrSergey.MyREST.models.Sensor;
 import ru.mrSergey.MyREST.repositories.SensorRepository;
 import java.util.List;
@@ -20,7 +21,6 @@ public class SensorService {
         this.sensorRepository = sensorRepository;
     }
 
-
     public List<Sensor> findAll() {
         return sensorRepository.findAll(Sort.by("name"));
     }
@@ -32,14 +32,12 @@ public class SensorService {
 
     @Transactional
     public void save(Sensor sensor) {
-//        enrichPerson(sensor); //Добавляем перед сохранением
         sensorRepository.save(sensor);
     }
 
-    //Метод добавления данных для Person в базу данных
-//    private void enrichPerson(Person person) {
-//        person.setCratedAt((LocalDateTime.now()));
-//        person.setUpdatedAt((LocalDateTime.now()));
-//        person.setCreatedWho("ADMIN");
-//    }
+    public Sensor findByName(String name) {
+        if (sensorRepository.findByName(name)==null)
+            return new Sensor();
+        return sensorRepository.findByName(name);
+    }
 }

@@ -2,6 +2,9 @@ package ru.mrSergey.MyREST.models;
 
 import jakarta.persistence.*;
 
+import java.time.LocalDateTime;
+import java.util.Date;
+
 @Entity
 @Table(name = "data")
 public class Data {
@@ -11,18 +14,22 @@ public class Data {
         private int id;
 
         @Column(name = "value")
-        private String value;
+        private int value;
 
         @Column(name = "raining")
-        private String raining;
+        private boolean raining;
 
         @ManyToOne
-        @Column(name = "id_sensor")
+        @JoinColumn(name = "id_sensor", referencedColumnName = "id")
         private Sensor owner;
 
-        public Data(String value, String raining) {
+        @Column(name = "time")
+        private LocalDateTime time;
+
+        public Data(int value, boolean raining, LocalDateTime time) {
                 this.value = value;
                 this.raining = raining;
+                this.time = time;
         }
         public Data(){}
 
@@ -34,19 +41,19 @@ public class Data {
                 this.id = id;
         }
 
-        public String getValue() {
+        public int getValue() {
                 return value;
         }
 
-        public void setValue(String value) {
+        public void setValue(int value) {
                 this.value = value;
         }
 
-        public String getRaining() {
+        public boolean getRaining() {
                 return raining;
         }
 
-        public void setRaining(String raining) {
+        public void setRaining(boolean raining) {
                 this.raining = raining;
         }
 
@@ -56,5 +63,13 @@ public class Data {
 
         public void setOwner(Sensor owner) {
                 this.owner = owner;
+        }
+
+        public LocalDateTime getTime() {
+                return time;
+        }
+
+        public void setTime(LocalDateTime time) {
+                this.time = time;
         }
 }
