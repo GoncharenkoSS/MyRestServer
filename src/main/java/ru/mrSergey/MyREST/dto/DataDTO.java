@@ -2,9 +2,6 @@ package ru.mrSergey.MyREST.dto;
 
 import ru.mrSergey.MyREST.models.Sensor;
 
-import java.time.LocalDateTime;
-import java.util.Date;
-
 public class DataDTO {
 
     private int value;

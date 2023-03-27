@@ -1,12 +1,8 @@
 package ru.mrSergey.MyREST.controllers;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotEmpty;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -43,16 +39,13 @@ public class Controller {
         this.sensorRepository = sensorRepository;
     }
 
+    //Получаем список сенсоров из БД
     @GetMapping("/sensors")
     public List<SensorDTO> getSensor() {
         return sensorService.findAll().stream().map(this::convertToSensorDTO).collect(Collectors.toList());
     }
 
-    @GetMapping("/sensors/{id}")
-    public Sensor getSensor(@PathVariable("id") int id) {
-        return sensorService.findOne(id);
-    }
-
+    //Метод регистрации сенсора
     @PostMapping("/sensors/registrations")
     public ResponseEntity<HttpStatus> createSensor(
             @RequestBody @Valid SensorDTO sensorDTO, BindingResult bindingResult) {
@@ -63,42 +56,47 @@ public class Controller {
         return ResponseEntity.ok(HttpStatus.OK);
     }
 
+    //Получаем список данных с сенсора
     @GetMapping("/measurements")
     public List<DataDTO> getData() {
         return dataService.findAll().stream().map(this::convertToDataDTO).collect(Collectors.toList());
     }
 
-
+    //Получаем количество дождливых дней
     @GetMapping("/measurements/rainyDaysCount")
     public String sumRainingDay() {
         return "Количество дождливых дней: " + dataService.sumRainingDay(true).size();
     }
 
+    //Добавляем в БД данные из JSON
     @PostMapping("/measurements/add")
     public ResponseEntity<HttpStatus> addDate(
+            //ObjectNode позволяет вычитывать JSON по ключу(!!!но не работает валидация!!!)
             @RequestBody ObjectNode json, DataDTO dataDTO, BindingResult bindingResult) {
-
+        //Собственная валидация
         if (json.get("value").asInt() > 50 || json.get("value").asInt() < -50 || json.get("value") == null)
             throw new NotCreatedException("Температура должна быть в значениях от -50 до 50");
         else
             dataDTO.setValue(json.get("value").asInt());
+        //Собственная валидация
         if (json.get("raining") == null)
             throw new NotCreatedException("Поле не может быть пустым");
         else
             dataDTO.setRaining(json.get("raining").asBoolean());
-
+        //Метод для построения ошибок из bindingResult
         if (bindingResult.hasErrors()) answer(bindingResult);
-
+        //Проверка, есть ли в БД данный сенсор
         if (sensorRepository.findByName(json.at("/sensor/owner").asText()) == null)
             throw new NotCreatedException("Такого сенсора нет в базе данных");
-
+        //Присвоение данных
         dataDTO.setOwner(sensorService.findByName(json.at("/sensor/owner").asText()));
+        //Сохранение
         dataService.save(convertToData(dataDTO));
-
+        //Ответ клиенту
         return ResponseEntity.ok(HttpStatus.OK);
-
     }
 
+    //Методы конвертации ИЗ/В ДТО
     private Sensor convertToSensor(SensorDTO sensorDTO) {
         return modelMapper.map(sensorDTO, Sensor.class);
     }
@@ -115,19 +113,25 @@ public class Controller {
         return modelMapper.map(data, DataDTO.class);
     }
 
+    // Отображение ошибки клиенту
     @ExceptionHandler//Аннотация для своих исключений(!!!!!!!!!!!!если была нарушена валидация!!!!!!!!)
     private ResponseEntity<ErrorResponse> handleException(NotCreatedException e) {
-        ErrorResponse response = new ErrorResponse(
-                e.getMessage(), System.currentTimeMillis());
+        ErrorResponse response = new ErrorResponse(e.getMessage(), System.currentTimeMillis());
+
         //В HTTP ответе тело ответа(response) и статус в заголовке
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
 
+    //Метод для построения ошибок из bindingResult
     public void answer(BindingResult bindingResult) {
         StringBuilder errorMsg = new StringBuilder();
         List<FieldError> errors = bindingResult.getFieldErrors();
+
         for (FieldError error : errors) {
-            errorMsg.append(error.getField()).append(" - ").append(error.getDefaultMessage()).append(";");
+            errorMsg.append(error.getField())
+                    .append(" - ")
+                    .append(error.getDefaultMessage())
+                    .append(";");
         }
         throw new NotCreatedException(errorMsg.toString());
     }
